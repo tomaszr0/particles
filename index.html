@@ -1,0 +1,318 @@
+<meta charset="utf-8">
+<style>
+    canvas{
+        background:black;
+        border:gray solid 4px;
+    }
+    span{
+        display:inline-block;
+        border:2px gray solid;
+        cursor:pointer;
+        margin-right:2px;
+        background:black;
+    }
+</style>
+<body>
+    <canvas width=500 height=500></canvas><br>
+</body>
+
+<script>
+    c = document.getElementsByTagName("canvas")[0];
+    p = c.getContext("2d");
+    
+    elements=[];
+    elements["water"]={
+        name: "water",
+        type: "liquid",
+        color: "#3333ff",
+        fallSpeedV: [ [2,2], [1,1] ],
+        fallSpeedH: [ [0,49], [1,1] ],
+        speedH: [ [0,1], [1,3] ]
+        
+    }
+    elements["lava"]={
+        name: "lava",
+        type: "liquid",
+        color: "#ff5511",
+        fallSpeedV: [ [2,4], [1,1] ],
+        fallSpeedH: [ [0,49], [1,1] ],
+        speedH: [ [0,4], [1,1] ]
+    }
+    elements["snow"]={
+        name: "snow",
+        type: "solid",
+        color: "#ffffff",
+        fallSpeedV: [ [0,1], [1,4] ],
+        fallSpeedH: [ [0,9], [1,1] ],
+        speedH: [ [0,1] ]
+    }
+    elements["stone"]={
+        name: "stone",
+        type: "solid",
+        color: "#666666",
+        fallSpeedV: [ [3,1] ],
+        fallSpeedH: [ [0,1] ],
+        speedH: [ [0,1] ]
+    }
+    elements["ice"]={
+        name: "ice",
+        type: "static",
+        color: "#aaaaff",
+        fallSpeedV: [ [0,1] ],
+        fallSpeedH: [ [0,1] ],
+        speedH: [ [0,1] ]
+    }
+    
+    
+    for(var key in elements){
+        span=document.createElement("span");
+        span.innerHTML=key;
+        span.title=key;
+        span.style.color=elements[key].color;
+        document.body.append(span);
+    }
+    
+    parts=[];
+    parts[0]=[];
+    parts[0][2]="none";
+    index=[];
+    x=0;
+    y=0;
+    while(x<c.width+1){
+        index[x]=[];
+        while(y<c.height+1){
+            index[x][y]=0;
+            y++;
+        }
+        y=0;
+        x++;
+    }
+    
+    
+    setInterval(change,20);
+    function change(){
+        i=1;
+        while(i<parts.length){
+            elem=parts[i][2];
+            pX=parts[i][0];
+            pY=parts[i][1];
+            
+            if(index[parts[i][0]][parts[i][1]+1]!=0 || parts[i][1]==c.height-1)
+                status="speedH";
+            else 
+                status="fallSpeedH";
+            
+            
+            
+            // LAVA-WATER REACTION
+            if((elem=="water" || elem=="snow") && (parts[index[pX-1][pY]][2]=="lava" || parts[index[pX+1][pY]][2]=="lava" || parts[index[pX][pY-1]][2]=="lava" || parts[index[pX][pY+1]][2]=="lava")){
+                elem="stone";
+                parts[i][2]="stone";
+            if(parts[index[pX-1][pY]][2]=="lava")
+                parts[index[pX-1][pY]][2]="stone";
+            else if(parts[index[pX+1][pY]][2]=="lava")
+                parts[index[pX+1][pY]][2]="stone";
+            else if(parts[index[pX][pY-1]][2]=="lava")
+                parts[index[pX][pY-1]][2]="stone";
+            else if(parts[index[pX][pY+1]][2]=="lava")
+                parts[index[pX][pY+1]][2]="stone";
+            }
+            // LAVA-WATER REACTION /
+            
+            // LAVA-ICE REACTION
+            if(elem=="ice" && (parts[index[pX-1][pY]][2]=="lava" || parts[index[pX+1][pY]][2]=="lava" || parts[index[pX][pY-1]][2]=="lava" || parts[index[pX][pY+1]][2]=="lava")){
+                elem="water";
+                parts[i][2]="water";
+            if(parts[index[pX-1][pY]][2]=="lava")
+                parts[index[pX-1][pY]][2]="stone";
+            else if(parts[index[pX+1][pY]][2]=="lava")
+                parts[index[pX+1][pY]][2]="stone";
+            else if(parts[index[pX][pY-1]][2]=="lava")
+                parts[index[pX][pY-1]][2]="stone";
+            else if(parts[index[pX][pY+1]][2]=="lava")
+                parts[index[pX][pY+1]][2]="stone";
+            }
+            // LAVA-ICE REACTION /
+            
+            // LAVA-STONE REACTION
+            if(Math.floor(Math.random()*50)==1 && elem=="stone" && (parts[index[pX-1][pY]][2]=="lava" || parts[index[pX+1][pY]][2]=="lava" || parts[index[pX][pY-1]][2]=="lava" || parts[index[pX][pY+1]][2]=="lava")){
+                elem="lava";
+                parts[i][2]="lava";
+            }
+            // LAVA-STONE REACTION /
+            
+            
+            // FREEZING
+            if(Math.floor(Math.random()*5)==1 && (elem=="water" || elem=="snow") && (parts[index[pX-1][pY]][2]=="ice" || parts[index[pX+1][pY]][2]=="ice" || parts[index[pX][pY-1]][2]=="ice" || parts[index[pX][pY+1]][2]=="ice")){
+                elem="ice";
+                parts[i][2]="ice";
+            }
+            // FREEZING /
+            
+            // MELTING
+            if(elem=="snow" && (parts[index[pX-1][pY]][2]=="water" || parts[index[pX+1][pY]][2]=="water" || parts[index[pX][pY-1]][2]=="water" || parts[index[pX][pY+1]][2]=="water")){
+                elem="water";
+                parts[i][2]="water";
+            }
+            // MELTING /
+            
+            // SINKING
+            partTop=parts[index[pX][pY-1]]
+            if(index[pX][pY-1]!=0)
+            if(status=="speedH" && elements[elem].type=="liquid" && elements[partTop[2]].type=="solid"){
+                index[pX][pY]=index[pX][pY-1];
+                index[pX][pY-1]=i;
+                parts[i][1]=pY-1;
+                partTop[1]=pY;
+                i++;
+                continue;
+            }
+            // SINKING /
+            
+            
+            // HORIZONTAL MOVE
+            chances=0;
+            elements[elem][status].forEach(function(item){chances+=item[1];});
+            chance=Math.floor(Math.random()*chances+1);
+            elements[elem][status].forEach(function(item){
+                if(chance>0){
+                    chance-=item[1];
+                    if(chance<=0){
+                        moveH = item[0];
+                        return;
+                    }
+                }
+            })
+            abs=Math.floor(Math.random()*2);
+            if(!abs)
+                moveH*=-1;
+            
+            
+            pX += moveH;
+            if(pX<0) pX=Math.abs(pX);
+            if(pX>c.width) pX = 2*c.width - pX;
+            // HORIZONTAL MOVE /
+            
+            
+            // VERTICAL MOVE
+            chances=0;
+            elements[elem].fallSpeedV.forEach(function(item){chances+=item[1];});
+            chance=Math.floor(Math.random()*chances+1);
+            elements[elem].fallSpeedV.forEach(function(item){
+                if(chance>0){
+                    chance-=item[1];
+                    if(chance<=0){
+                        moveV = item[0];
+                        return;
+                    }
+                }
+            })
+            
+            while(moveV>0 && (index[pX][parts[i][1]+moveV]!=0 || parts[i][1]+moveV>=c.height)){
+                moveV--;
+            }
+            
+            if(status=="speedH")
+                pY=parts[i][1];
+            else
+                pY +=  moveV;
+            if(pY<0) pY=Math.abs(pY);
+            if(pY>c.height-1) pY= c.height-1;
+            // VERTICAL MOVE /
+            
+            
+            if(index[pX][pY]==0){
+                index[parts[i][0]][parts[i][1]]=0;
+                index[pX][pY]=i;
+                parts[i][0] = pX;
+                parts[i][1] = pY;
+            }
+            
+            i++;
+        }
+        render();
+    }
+    
+    function render(){
+        p.clearRect(0,0,c.width,c.height);
+        p.beginPath;
+        p.fillStyle="white";
+        
+        i=1;
+        while(i<parts.length){
+            p.fillStyle=elements[parts[i][2]].color;
+            p.fillRect(parts[i][0],parts[i][1],1,1);
+            i++;
+        } 
+    }
+    
+    
+    // MOUSE CLICKS
+    mousehold=undefined;
+    c.onmousedown=function(e){
+        if(mousehold!=undefined)
+            return;
+        spawn(e);
+        mousehold=setInterval(function(){spawn(e)},20);
+    }
+    c.onmouseup=function(){
+        clearInterval(mousehold);
+        mousehold=undefined;
+    };
+    function spawn(e){
+        i=parts.length;
+        if(mX>498 || mX<1 || mY>498 || mY<1 || index[mX][mY]!=0)
+            return;
+        parts[i]=[];
+        parts[i][0]=mX;
+        parts[i][1]=mY;
+        parts[i][2]=currElem;
+        
+        parts[i+1]=[];
+        parts[i+1][0]=mX-1;
+        parts[i+1][1]=mY;
+        parts[i+1][2]=currElem;
+        
+        parts[i+2]=[];
+        parts[i+2][0]=mX+1;
+        parts[i+2][1]=mY;
+        parts[i+2][2]=currElem;
+        
+        parts[i+3]=[];
+        parts[i+3][0]=mX;
+        parts[i+3][1]=mY-1;
+        parts[i+3][2]=currElem;
+        
+        parts[i+4]=[];
+        parts[i+4][0]=mX;
+        parts[i+4][1]=mY+1;
+        parts[i+4][2]=currElem;
+        
+    }
+    // MOUSE CLICKS /
+    
+    
+    // MOUSE COORDS
+    var mX;
+    var mY;
+    c.onmousemove=function(e){coord(e)};
+    function coord(e){
+        mX=e.clientX-c.offsetLeft-4;
+        mY=e.clientY-c.offsetTop-4;
+    }
+    // MOUSE COORDS /
+    
+    
+    // SELECT ELEMENT
+    currElem="water";
+    spans=document.getElementsByTagName("span");
+    i=0;
+    while(i<spans.length){
+        spans[i].onclick=function(){
+            currElem=this.title;
+        }
+        i++;
+    }
+    // SELECT ELEMENT /
+    
+</script>
